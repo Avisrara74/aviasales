@@ -1,5 +1,6 @@
 .checkbox-wrap {
-  padding: 10px 0px;
+  padding: 10px 20px;
+  cursor: pointer;
 }
 
   .checkbox-wrap > input[type="checkbox"] {

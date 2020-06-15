@@ -14,9 +14,14 @@ const TransferFilterWrap = styled.div`
   background-color: white;
   box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
-  padding: 20px 0px 20px 20px;
+  padding: 20px 0px 20px 0px;
   display: flex;
   flex-direction: column;
+`;
+
+const Title = styled.span`
+  padding-left: 20px;
+  padding-bottom: 5px;
 `;
 
 const checkboxActiveStyle = (event) => {
@@ -51,7 +56,7 @@ const TransferFilter = (props) => {
 
   return (
     <TransferFilterWrap>
-      <span>КОЛИЧЕСТВО ПЕРЕСАДОК</span>
+      <Title>КОЛИЧЕСТВО ПЕРЕСАДОК</Title>
       {Object.values(checkboxes).map((checkbox) => (
         <div
           onMouseEnter={checkboxActiveStyle}

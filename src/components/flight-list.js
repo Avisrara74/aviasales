@@ -12,10 +12,9 @@ const FlightListWrapper = styled.div`
 `;
 
 const ListItem = styled.div`
-  height: 142px;
   display: flex;
   flex-direction: column;
-  flex-basis: 100%;
+  flex-basis: 142px;
   background-color: white;
   margin: 20px 0px 0px 0px;
   padding: 20px 20px 20px 20px;
