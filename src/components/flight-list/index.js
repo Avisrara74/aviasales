@@ -1,9 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import propTypes from 'prop-types';
-import { uniqueId } from 'lodash';
-import SegmentInfo from './flight-list-segment';
-
+import SegmentInfo from './segment';
 
 const FlightListWrapper = styled.div`
   display: flex;
@@ -21,15 +19,26 @@ const ListItem = styled.div`
   box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
   align-content: space-between;
+  
+  @media (max-width: 375px) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  
 `;
 
 const Price = styled.div`
-  color: #2196F3;
+  color: #2196f3;
   font-size: 24px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
   margin-bottom: 10px;
+  
+  @media (max-width: 375px) {
+    grid-template-columns: 1fr 1fr;
+    grid-column: 1 / 3;
+  }
 `;
 
 const AeroLogoWrap = styled.div`
@@ -37,43 +46,43 @@ const AeroLogoWrap = styled.div`
   grid-column: -1 / -2;
 `;
 
-const FlightList = (props) => {
+const Index = (props) => {
   const { tickets } = props;
+
   const renderTickets = () => {
     if (tickets.length === 0) return null;
     return tickets.map((ticket, index) => {
       if (index >= 5) return false;
-      const { price, carrier, segments } = ticket;
+      const {
+        id, price, carrier, segments,
+      } = ticket;
       const aeroLogoUrl = `https://pics.avs.io/99/36/${carrier}.png`;
 
+      const formatedPrice = price.toLocaleString().split(',').join(' ');
+
       return (
-        <ListItem key={uniqueId()}>
+        <ListItem key={id}>
           <Price>
-            <span>{price}</span>
+            <span>{`${formatedPrice} Р`}</span>
             <AeroLogoWrap>
               <img src={aeroLogoUrl} alt="aero-brand" />
             </AeroLogoWrap>
           </Price>
-
 
           <SegmentInfo segments={segments} />
         </ListItem>
       );
     });
   };
-  return (
-    <FlightListWrapper>
-      {renderTickets()}
-    </FlightListWrapper>
-  );
+  return <FlightListWrapper>{renderTickets()}</FlightListWrapper>;
 };
 
-FlightList.propTypes = {
+Index.propTypes = {
   tickets: propTypes.arrayOf(propTypes.object),
 };
 
-FlightList.defaultProps = {
+Index.defaultProps = {
   tickets: [],
 };
 
-export default FlightList;
+export default Index;

@@ -8,17 +8,21 @@ const InfoWrap = styled.div`
   grid-template-columns: 1fr 1fr 1fr;
   align-content: space-between;
   margin: 10px 0px 0px 0px;
+  
+  @media (max-width: 375px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Placeholder = styled.p`
-  color: #A0B0B9;
+  color: #a0b0b9;
   font-size: 12px;
   margin: 0;
   text-transform: uppercase;
 `;
 
 const DurationInfo = styled.p`
-  color: #4A4A4A;
+  color: #4a4a4a;
   font-size: 14px;
   margin: 0;
   text-transform: uppercase;

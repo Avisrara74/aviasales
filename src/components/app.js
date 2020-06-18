@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { sortBy } from 'lodash';
+import { sortBy, uniqueId } from 'lodash';
 import styled from 'styled-components';
 import Loader from 'react-loader-spinner';
+import { fetchServerData } from '../API/aviasales';
 import FlightList from './flight-list';
 import PriceFilter from './price-filter';
 import TransferFilter from './transfer-filter';
-import mainLogoSrc from './main-logo.png';
+import mainLogoSrc from '../images/main-logo.png';
 
 const ContentWrapper = styled.div`
   display: flex;
   flex-direction: row;
   max-width: 768px;
   margin: 0px auto 0px auto;
-  color: #4A4A4A;
+  color: #4a4a4a;
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
 `;
 
 const Content = styled.div`
@@ -34,112 +38,115 @@ const LoaderWrapper = styled.div`
   flex-basis: 100%;
 `;
 
-const defaultFilterCheckboxes = {
-  all: { isChecked: true, title: 'Все', checkboxType: 'all' },
-  noTransfer: { isChecked: true, title: 'Без пересадок', checkboxType: 'noTransfer' },
-  oneTransfer: { isChecked: true, title: '1 пересадка', checkboxType: 'oneTransfer' },
-  twoTransfer: { isChecked: true, title: '2 пересадки', checkboxType: 'twoTransfer' },
-  threeTransfer: { isChecked: true, title: '3 пересадки', checkboxType: 'threeTransfer' },
-};
+const defaultFilterCheckboxes = [
+  {
+    isChecked: true, title: 'Все', checkboxType: 'all', id: uniqueId(),
+  },
+  {
+    isChecked: true, title: 'Без пересадок', checkboxType: 'noTransfer', id: uniqueId(),
+  },
+  {
+    isChecked: true, title: '1 пересадка', checkboxType: 'oneTransfer', id: uniqueId(),
+  },
+  {
+    isChecked: true, title: '2 пересадки', checkboxType: 'twoTransfer', id: uniqueId(),
+  },
+  {
+    isChecked: true, title: '3 пересадки', checkboxType: 'threeTransfer', id: uniqueId(),
+  },
+];
 
 const defaultTicketsList = {
   noTransfer: [],
   oneTransfer: [],
   twoTransfer: [],
   threeTransfer: [],
-  show: [],
-};
-
-const fetchServerData = async (url, maxRequestsNumber = 5) => {
-  const searchIdRequest = async () => (
-    axios.get(url)
-  );
-
-  try {
-    return await searchIdRequest();
-  } catch (error) {
-    if (maxRequestsNumber === 0) throw new Error(error, 'AttemptsLimitExceeded');
-    return fetchServerData(url, maxRequestsNumber - 1);
-  }
 };
 
 const App = () => {
   const [checkboxes, changeCheckboxes] = useState(defaultFilterCheckboxes);
   const [priceFilter, changePriceFilter] = useState('cheapest'); // cheapest, fastest
+
+  // все билеты
   const [tickets, setTickets] = useState(defaultTicketsList);
+
+  // видимые на странице билеты
+  const [visibleTickets, setVisibleTickets] = useState([]);
 
   const [dataLoader, setDataLoader] = useState(true);
 
+  // вспомогательная функция для уменьшения дублирования при setTickets
+  const getTicketsKeys = () => Object.keys(defaultTicketsList);
 
-  const setVisibleTickets = () => {
-    const visibleTickets = (currentTickets) => {
+  const sortVisibleTicketsBy = (sortType) => {
+    let sortedFunc;
+    switch (sortType) {
+      case 'cheapest': {
+        sortedFunc = (arr) => sortBy(arr, ['price']);
+        break;
+      }
+      case 'fastest': {
+        sortedFunc = (arr) => sortBy(arr, ['segments[0].duration']);
+        break;
+      }
+      default: sortedFunc = (arr) => sortBy(arr, (ticket) => ticket.price);
+    }
+
+    setVisibleTickets((currentTickets) => ([
+      ...sortedFunc(currentTickets),
+    ]));
+  };
+
+  const getVisibleTickets = () => {
+    const getVisibleTicketsByCheckboxes = () => {
       let show = [];
-      Object.entries(checkboxes).forEach((el) => {
-        const key = el[0];
-        const { isChecked } = el[1];
-        if (key === 'all') return;
-        if (isChecked === true) show = [...show, ...currentTickets[key]];
+      // заполняем массив видимых билетов в зависимости от активных чекбоксов
+      checkboxes.forEach((el) => {
+        const { isChecked, checkboxType } = el;
+        if (checkboxType === 'all') return;
+        if (isChecked === true) {
+          show = [...show, ...tickets[checkboxType]];
+        }
       });
       return [...show];
     };
-
-    setTickets((currentTickets) => ({
-      ...currentTickets,
-      show: visibleTickets(currentTickets),
-    }));
-  };
-
-  const sortByPrice = () => {
-    const sortedFunc = (arr) => sortBy(arr, (ticket) => ticket.price);
-    setTickets((currentTickets) => ({
-      ...currentTickets,
-      noTransfer: sortedFunc(currentTickets.noTransfer),
-      oneTransfer: sortedFunc(currentTickets.oneTransfer),
-      twoTransfer: sortedFunc(currentTickets.twoTransfer),
-      threeTransfer: sortedFunc(currentTickets.threeTransfer),
-    }));
-    setVisibleTickets();
-  };
-
-  const sortByDuration = () => {
-    const sortedFunc = (arr) => sortBy(arr, (ticket) => ticket.segments[0].duration);
-    setTickets((currentTickets) => ({
-      ...currentTickets,
-      noTransfer: sortedFunc(currentTickets.noTransfer),
-      oneTransfer: sortedFunc(currentTickets.oneTransfer),
-      twoTransfer: sortedFunc(currentTickets.twoTransfer),
-      threeTransfer: sortedFunc(currentTickets.threeTransfer),
-    }));
-    setVisibleTickets();
+    setVisibleTickets(() => [...getVisibleTicketsByCheckboxes()]);
+    sortVisibleTicketsBy(priceFilter);
   };
 
   const getTickets = async () => {
-    const fetchSearchId = await fetchServerData('https://front-test.beta.aviasales.ru/search');
+    const ticketsKeys = getTicketsKeys();
+    const aviasalesUrl = 'https://front-test.beta.aviasales.ru/';
+    const fetchSearchId = await fetchServerData(`${aviasalesUrl}search`);
     const { searchId } = fetchSearchId.data;
     const fetchData = async () => {
-      const response = await fetchServerData(`https://front-test.beta.aviasales.ru/tickets?searchId=${searchId}`);
-      const newTickets = response.data.tickets;
+      const response = await fetchServerData(
+        `${aviasalesUrl}tickets?searchId=${searchId}`,
+      );
+
+      // уникальный id для билетов
+      const newTickets = response.data.tickets.map((el) => ({ ...el, id: uniqueId() }));
+
+      // сортировка каждой новой пачки билетов
       setTickets((currentTickets) => ({
-        ...currentTickets,
-        noTransfer: [
-          ...currentTickets.noTransfer,
+        [ticketsKeys[0]]: [
+          ...currentTickets[ticketsKeys[0]],
           ...newTickets.filter((ticket) => ticket.segments[0].stops.length === 0),
         ],
-        oneTransfer: [
-          ...currentTickets.oneTransfer,
+        [ticketsKeys[1]]: [
+          ...currentTickets[ticketsKeys[1]],
           ...newTickets.filter((ticket) => ticket.segments[0].stops.length === 1),
         ],
-        twoTransfer: [
-          ...currentTickets.twoTransfer,
+        [ticketsKeys[2]]: [
+          ...currentTickets[ticketsKeys[2]],
           ...newTickets.filter((ticket) => ticket.segments[0].stops.length === 2),
         ],
-        threeTransfer: [
-          ...currentTickets.threeTransfer,
+        [ticketsKeys[3]]: [
+          ...currentTickets[ticketsKeys[3]],
           ...newTickets.filter((ticket) => ticket.segments[0].stops.length === 3),
         ],
       }));
       if (response.data.stop === true) {
-        sortByPrice();
         setDataLoader(false);
       }
       if (response.data.stop === false) {
@@ -151,12 +158,11 @@ const App = () => {
   };
 
   useEffect(() => {
-    getTickets();
-  }, []);
-
-  useEffect(() => {
-    setVisibleTickets();
-  }, [checkboxes]);
+    // грузим билеты пока отдаёт сервер
+    if (dataLoader === true) getTickets();
+    // показываем после загрузки
+    if (dataLoader === false) getVisibleTickets();
+  }, [dataLoader, checkboxes, priceFilter]);
 
   const renderFlightList = () => {
     if (dataLoader === true) {
@@ -166,7 +172,7 @@ const App = () => {
         </LoaderWrapper>
       );
     }
-    return <FlightList tickets={tickets.show} />;
+    return <FlightList tickets={visibleTickets} />;
   };
   return (
     <div className="main-wrapper">
@@ -178,15 +184,13 @@ const App = () => {
         <TransferFilter
           checkboxes={checkboxes}
           changeCheckboxes={changeCheckboxes}
-          setVisibleTickets={setVisibleTickets}
         />
 
         <Content>
           <PriceFilter
             priceFilter={priceFilter}
             changePriceFilter={changePriceFilter}
-            sortByDuration={sortByDuration}
-            sortByPrice={sortByPrice}
+            sortVisibleTicketsBy={sortVisibleTicketsBy}
           />
           {renderFlightList()}
         </Content>

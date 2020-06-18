@@ -18,6 +18,7 @@ const defaultFilterStyles = `
     background-color: #FFFFFF;
     height: inherit;
     flex-grow: 1;
+    cursor: pointer;
   `;
 const isActiveFilterStyles = `
     color: #FFFFFF;
@@ -26,16 +27,16 @@ const isActiveFilterStyles = `
     flex-grow: 1;
   `;
 
-const PriceFilter = (props) => {
+const Index = (props) => {
   const {
-    priceFilter, changePriceFilter, sortByDuration, sortByPrice,
+    priceFilter, changePriceFilter, sortVisibleTicketsBy,
   } = props;
   const FilterOption1 = styled.div`
-    ${(priceFilter === 'cheapest') ? isActiveFilterStyles : defaultFilterStyles}
+    ${priceFilter === 'cheapest' ? isActiveFilterStyles : defaultFilterStyles}
     border-radius: 5px 0px 0px 5px;
   `;
   const FilterOption2 = styled.div`
-    ${(priceFilter === 'fastest') ? isActiveFilterStyles : defaultFilterStyles}
+    ${priceFilter === 'fastest' ? isActiveFilterStyles : defaultFilterStyles}
     border-radius: 0px 5px 5px 0px;
   `;
 
@@ -43,12 +44,12 @@ const PriceFilter = (props) => {
     switch (event.target.getAttribute('name')) {
       case 'cheapest': {
         changePriceFilter('cheapest');
-        sortByPrice();
+        sortVisibleTicketsBy('cheapest');
         break;
       }
       case 'fastest': {
         changePriceFilter('fastest');
-        sortByDuration();
+        sortVisibleTicketsBy('fastest');
         break;
       }
       default: {
@@ -57,28 +58,29 @@ const PriceFilter = (props) => {
     }
   };
 
-
   return (
     <PriceFilterWrap>
-      <FilterOption1 name="cheapest" onClick={handleOnChangeFilter}>Самый дешевый</FilterOption1>
-      <FilterOption2 name="fastest" onClick={handleOnChangeFilter}>Самый быстрый</FilterOption2>
+      <FilterOption1 name="cheapest" onClick={handleOnChangeFilter}>
+        Самый дешевый
+      </FilterOption1>
+      <FilterOption2 name="fastest" onClick={handleOnChangeFilter}>
+        Самый быстрый
+      </FilterOption2>
     </PriceFilterWrap>
   );
 };
 
-PriceFilter.propTypes = {
+Index.propTypes = {
   priceFilter: propTypes.string,
   changePriceFilter: propTypes.func,
-  sortByDuration: propTypes.func,
-  sortByPrice: propTypes.func,
+  sortVisibleTicketsBy: propTypes.func,
 
 };
 
-PriceFilter.defaultProps = {
+Index.defaultProps = {
   priceFilter: 'cheapest',
   changePriceFilter: null,
-  sortByDuration: null,
-  sortByPrice: null,
+  sortVisibleTicketsBy: null,
 };
 
-export default PriceFilter;
+export default Index;
